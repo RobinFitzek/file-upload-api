@@ -1,0 +1,31 @@
+# filepath: /home/robin/Documents/GitHub/file-upload-api/.gitignore
+
+# Python Virtual Environment
+venv/
+.venv/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Environment Variablen (sensible Daten)
+.env
+
+# IDE Einstellungen
+.vscode/
+.idea/
+
+# OS Dateien
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test/Coverage
+.pytest_cache/
+.coverage
+htmlcov/
