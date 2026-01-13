@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geodata Upload</title>
+
+    <!-- Bootstrap CSS  -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> 
+
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h2 class="text-center mb-4">Geodata File Upload</h2>
+                
+                <!-- File Upload -->
+                <div class="mb-3">
+                    <input type="file" class="form-control" id="fileInput" accept=".csv,.nas">
+                    <small class="text-muted">Erlaubte Formate: .csv, .nas</small>
+                </div>
+
+                <!-- Zwei Buttons - test und upload -->
+                <div class="d-flex gap-2 mb-4">
+                    <button class="btn btn-secondary flex-fill" onclick="testFile()">
+                        Test
+                    </button>
+                    <button class="btn btn-primary flex-fill" onclick="uploadFile()">
+                        Upload
+                    </button>
+                </div>
+
+                <!-- Ergebnis-Anzeige -->
+                <div id="result" class="alert" style="display: none;"></div>
+                
+                <!-- Detail-Ausgabe (JSON) -->
+                <pre id="details" class="bg-light p-3 rounded" style="display: none;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Button Test
+        async function testFile() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                showResult('Bitte eine Datei auswählen', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/test', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('Datei erfolgreich geprüft', 'success');
+                    showDetails(data);
+                } else {
+                    showResult(data.detail || 'Fehler beim Testen', 'danger');
+                    showDetails(data);
+                }
+            } catch (error) {
+                showResult('Verbindungsfehler: ' + error.message, 'danger');
+            }
+        }
+
+        // Button Upload
+        async function uploadFile() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                showResult('Bitte eine Datei auswählen', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`Erfolg! ${data.imported_count || 0} Datensätze importiert`, 'success');
+                    showDetails(data);
+                } else {
+                    showResult(data.detail || 'Fehler beim Upload', 'danger');
+                    showDetails(data);
+                }
+            } catch (error) {
+                showResult('Verbindungsfehler: ' + error.message, 'danger');
+            }
+        }
+
+        // für Anzeige
+        function showResult(message, type) {
+            const result = document.getElementById('result');
+            result.className = `alert alert-${type}`;
+            result.textContent = message;
+            result.style.display = 'block';
+        }
+
+        function showDetails(data) {
+            const details = document.getElementById('details');
+            details.textContent = JSON.stringify(data, null, 2);
+            details.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
