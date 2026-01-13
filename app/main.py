@@ -15,7 +15,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS erlauben damit der Browser auf API Endpunkte zugreifen kann, wäre sonst geblockt
+# CORS erlauben damit der Browser auf API Endpunkte zugreifen kann, wäre sonst geblockt (Monolith)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
