@@ -1,7 +1,7 @@
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-sqlalchemy==2.0.25
-psycopg2-binary==2.9.9
-pydantic==2.5.3
-python-multipart==0.0.6
-python-dotenv==1.0.0
+fastapi==0.109.0    # Web-Framework / API-Endpunkte
+uvicorn[standard]==0.27.0  # Webserver / App-Start
+sqlalchemy==2.0.25  # Datenbank-Manager / Python-zu-SQL
+psycopg[binary]==3.1.17  # Postgres-Treiber (Version 3, hatte Probleme mit V2)
+pydantic==2.5.3     # Daten-Checker / Validierung
+python-multipart==0.0.6 # für File-Uploads
+python-dotenv==1.0.0 # liest die .env und macht die Konfigurationswerte verfügbar
