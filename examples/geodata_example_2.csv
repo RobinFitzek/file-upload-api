@@ -1,0 +1,5 @@
+ID,Flurstücknummer,longitude,latidude,Gemeinde,Bundesland,Größe in ha
+3001,,-,50.1109,Frankfurt am Main,Hessen,0.87
+3002,091-456-0020,13,4050,52.5200,Berlin,Berlin,1,25
+3002,091-456-0020,13.4050,95.0000,Berlin,, -0.10
+3004,077-889-0103,not_a_number,48.1372,München,Bayern,0.42
