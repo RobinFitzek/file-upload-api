@@ -1,0 +1,1 @@
+from app.schemas.geodata import GeodataBase, GeodataCreate, GeodataResponse

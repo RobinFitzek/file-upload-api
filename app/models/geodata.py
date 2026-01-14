@@ -1,3 +1,5 @@
+# db-structure - defineis how data is stored in the database
+
 from sqlalchemy import Column, Integer, String, Float
 from app.database import Base
 
