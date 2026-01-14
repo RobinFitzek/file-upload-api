@@ -1,9 +1,16 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine # Für die Verbindung zur DB
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Verbindung zur Postgres DB (gleiche Daten wie in docker-compose.yml)
-DATABASE_URL = "postgresql+psycopg://geodata_user:geodata_pass@localhost:5432/geodata_db"
-                # Datenbanktyp+Treiber+Username:Passwort+Host+Port+DB-Name
+# .env Datei laden (für lokale Entwicklung)
+load_dotenv()
+
+# Verbindung aus ENV oder Fallback
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg://geodata_user:geodata_pass@localhost:5432/geodata_db"
+)
 
 # Engine: Verbindung zur DB
 engine = create_engine(DATABASE_URL)

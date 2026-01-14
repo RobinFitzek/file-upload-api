@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 # Router erstellen (wird in main.py eingebunden)
 router = APIRouter(prefix="/api", tags=["upload"])
 
+def get_file_type(filename: str) -> str:
+    """Erkennt Dateityp anhand der Endung"""
+    if filename.lower().endswith(".csv"):
+        return "csv"
+    elif filename.lower().endswith(".nas"):
+        return "nas"
+    return "unknown"
 
 @router.post("/test")
 async def test_file(file: UploadFile = File(...)):
@@ -28,6 +35,8 @@ async def test_file(file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="Kein Dateiname angegeben")
     
+    file_type = get_file_type(file.filename) 
+
     # 1. Dateiformat prüfen
     try:
         parser = get_parser(file.filename)
@@ -49,6 +58,7 @@ async def test_file(file: UploadFile = File(...)):
     report = cleaner.generate_report(raw_data, cleaned_data, errors)
     report["filename"] = file.filename
     report["status"] = "valid" if not errors else "has_errors"
+    report["file_type"] = file_type 
     
     return report
 
@@ -61,6 +71,8 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     # 0. Prüfen ob Dateiname existiert
     if not file.filename:
         raise HTTPException(status_code=400, detail="Kein Dateiname angegeben")
+    
+    file_type = get_file_type(file.filename)
     
     # 1. Dateiformat prüfen
     try:
@@ -84,6 +96,9 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     
     # 4. In Datenbank speichern
     saved_count = 0
+    inserted_count = 0
+    updated_count = 0
+
     for row in cleaned_data:
         # Prüfen ob ID bereits existiert (Update statt Insert)
         existing = db.query(Geodata).filter(Geodata.id == row.get("id")).first()
@@ -92,10 +107,12 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
             # Update: vorhandenen Eintrag aktualisieren
             for key, value in row.items():
                 setattr(existing, key, value)
+            updated_count += 1
         else:
             # Insert: neuen Eintrag erstellen
             geodata = Geodata(**row)
             db.add(geodata)
+            inserted_count += 1
         
         saved_count += 1
     
@@ -105,8 +122,11 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     return {
         "status": "success",
         "filename": file.filename,
+        "file_type": file_type, 
         "total_rows": len(raw_data),
-        "saved_rows": saved_count,
+        "saved_rows": inserted_count + updated_count,
+        "inserted": inserted_count,  
+        "updated": updated_count,    
         "error_rows": len(errors),
-        "errors": errors
+        "errors": errors[:10]
     }
