@@ -4,17 +4,10 @@ from app.parsers.base import FileParser
 
 
 class NASParser(FileParser):
-    """
-    Parser für NAS/XML-Dateien.
-    Erwartet <NasExport> als Wurzel mit <Flurstueck>-Elementen.
-    """
-    
+
+    # erstellt Liste mit Elementen aus NAS-Datei, nutzt dabei REGEX damit tag-Name XML gültig ist    
     def parse(self, file_content: bytes) -> List[Dict[str, Any]]:
-        """
-        Liest NAS/XML und gibt Liste von Dicts zurück.
-        Nutzt Regex weil die Beispieldateien ungültiges XML haben
-        (z.B. <Größe in ha> mit Leerzeichen im Tag).
-        """
+
         # Bytes zu String
         text = file_content.decode("utf-8")
         
