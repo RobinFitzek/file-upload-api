@@ -5,7 +5,8 @@ import logging
 import os
 
 from app.database import engine, Base
-from app.models.geodata import Geodata # Importiere Geodata Modell
+from app.models.geodata import Geodata 
+from app.routers import upload
 
 # Logging fürs Terminal für Meldungen
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Router einbinden - fügt /api/test und /api/upload hinzu
+app.include_router(upload.router)
 
 # Kommunikation mit Frontend (GUI) (Root Pfad"/")
 @app.get("/", response_class=HTMLResponse)
