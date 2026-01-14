@@ -25,6 +25,8 @@ class CSVParser(FileParser):
             # Whitespace von Keys und Values entfernen
             cleaned_row = {}
             for key, value in row.items():
+                if key is None: # Bei zu vielen Spalten wie bei der geodata:example_2.csv
+                    continue
                 clean_key = key.strip() if key else key
                 clean_value = value.strip() if value else value
                 cleaned_row[clean_key] = clean_value

@@ -60,7 +60,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showResult('Datei erfolgreich geprüft', 'success');
+                    showResult(`Datei geprüft: ${data.valid_rows} gültige, ${data.error_rows} fehlerhafte Zeilen`, 'success');
                     showDetails(data);
                 } else {
                     showResult(data.detail || 'Fehler beim Testen', 'danger');
@@ -90,7 +90,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showResult(`Erfolg! ${data.imported_count || 0} Datensätze importiert`, 'success');
+                    showResult(`Erfolg! ${data.saved_rows} Datensätze importiert`, 'success');
                     showDetails(data);
                 } else {
                     showResult(data.detail || 'Fehler beim Upload', 'danger');

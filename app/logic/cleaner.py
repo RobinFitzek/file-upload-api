@@ -1,8 +1,3 @@
-"""
-Datenbereinigung für Geodaten.
-Entfernt Whitespace, konvertiert Typen, erkennt Fehler.
-"""
-
 from typing import List, Dict, Any, Tuple
 import logging
 
@@ -10,21 +5,20 @@ logger = logging.getLogger(__name__)
 
 
 class DataCleaner:
-    """
-    Bereinigt geparste Geodaten:
-    - Entfernt Whitespace
-    - Konvertiert Strings zu richtigen Typen (int, float)
-    - Wandelt leere Strings in None um
-    - Validiert Wertebereiche (z.B. latitude -90 bis 90)
-    - Erkennt fehlerhafte Zeilen
-    """
+
+    # Entfernt Whitespace
+    # Konvertiert Strings zu richtigen Typen (int, float)
+    # Wandelt leere Strings in None um
+    # Validiert Wertebereiche (z.B. latitude -90 bis 90)
+    # Erkennt fehlerhafte Zeilen
+
     
-    # Mapping: Quelldaten-Spalten → (DB-Spalte, erwarteter Typ)
+    # Mapping: Quelldaten-Spalten 
     FIELD_MAPPING = {
         "ID": ("id", int),
         "Flurstücknummer": ("flurstuecknummer", str),
         "longitude": ("longitude", float),
-        "latidude": ("latitude", float),  # Tippfehler in Quelldaten!
+        "latidude": ("latitude", float),  # Tippfehler in Quelldaten latidude != latitude
         "Gemeinde": ("gemeinde", str),
         "Bundesland": ("bundesland", str),
         "Größe in ha": ("groesse_ha", float),
@@ -73,7 +67,7 @@ class DataCleaner:
             if isinstance(value, str):
                 value = value.strip()
             
-            # Leere/NULL Werte → None
+            # Leere/NULL Werte zu None
             if value in self.NULL_VALUES or value is None:
                 cleaned[target_field] = None
                 continue
@@ -81,7 +75,7 @@ class DataCleaner:
             # Typ konvertieren
             try:
                 if expected_type == int:
-                    cleaned[target_field] = int(float(value))  # "3.0" → 3
+                    cleaned[target_field] = int(float(value))  # "3.0" zu 3
                 elif expected_type == float:
                     # Komma zu Punkt für deutsche Zahlen
                     if isinstance(value, str):
@@ -95,7 +89,7 @@ class DataCleaner:
         return cleaned
     
     def _validate_row(self, row: Dict[str, Any]) -> None:
-        """Validiert Wertebereiche und Pflichtfelder."""
+        #Validiert Wertebereiche und Pflichtfelder
         errors = []
         
         # ID muss vorhanden sein
@@ -120,12 +114,11 @@ class DataCleaner:
         if errors:
             raise ValueError("; ".join(errors))
     
+  
+    # Für Anzeige im Browser/Report
     def generate_report(self, raw_data: List[Dict], cleaned_data: List[Dict], errors: List[Dict]) -> Dict:
-        """
-        Erstellt einen Datenqualitäts-Report.
-        Wird für POST /api/test verwendet.
-        """
-        # Fehler aggregieren (gruppieren nach Fehlertyp)
+      
+        # Fehler gruppieren nach Fehlertypen
         error_summary = {}
         for err in errors:
             error_msg = err["error"]
