@@ -4,9 +4,15 @@ from fastapi.responses import HTMLResponse
 import logging
 import os
 
+from app.database import engine, Base
+from app.models.geodata import Geodata # Importiere Geodata Modell
+
 # Logging fürs Terminal für Meldungen
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Tabellen erstellen beim Start (falls nicht vorhanden)
+Base.metadata.create_all(bind=engine)
 
 # FastAPI App initialisieren 
 app = FastAPI(
@@ -46,4 +52,15 @@ def root():
 #Check ob API und DB laufen
 @app.get("/health")
 def health_check():
-    return {"api": "ok", "database": "not connected yet"}
+    """Prüft ob API und DB laufen"""
+    try:
+        from app.database import SessionLocal
+        from sqlalchemy import text 
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
+    return {"api": "ok", "database": db_status}
