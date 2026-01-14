@@ -1,189 +1,268 @@
-# Probeaufgabe: File-Upload API + Datenbereinigung + Persistenz (Postgres)
+# Geodata File Upload API
 
-## Ziel
-Du entwickelst eine kleine Web-Anwendung, in der Benutzer **.csv**- und **.nas**-Dateien hochladen können.  
-Die Anwendung soll:
+REST-API zum Hochladen, Validieren und Speichern von Geodaten aus CSV- und NAS-Dateien.
 
-1. Dateien entgegennehmen (Upload)
-2. Inhalte **einlesen**
-3. Eine **Datenqualitätsprüfung** und **Datenbereinigung** durchführen
-4. Die bereinigten Daten in eine **Postgres-Datenbank** schreiben (Docker)
-5. Dem Benutzer je nach Aktion ein verständliches Ergebnis anzeigen
+## Was kann die App?
 
-> UI/UX ist nicht wichtig – Funktionalität, saubere Struktur und Nachvollziehbarkeit sind entscheidend.
-
----
-
-## Rahmenbedingungen
-- Architektur: frei wählbar (Monolith ist ok; Frontend/Backend müssen nicht getrennt werden)
-- Technologie: frei wählbar (Python bietet sich an, ist aber kein Muss)
-- Datenbank: **Postgres in Docker**
-- Abgabe: **Public GitHub/GitLab Repo** + Link senden
+- CSV und NAS (XML) Dateien hochladen
+- Daten validieren (Typen, Wertebereiche, Pflichtfelder)
+- Daten bereinigen (Whitespace, NULL-Werte, deutsche Zahlen)
+- In PostgreSQL speichern
+- Web-GUI zum Testen
+- Swagger Docs automatisch generiert
 
 ---
 
-## Funktionsumfang
+## Schnellstart
 
-### 1) Frontend (Minimal-UI)
-Eine sehr einfache Seite, zentriert (z.B. Bootstrap), ohne Layout-Aufwand:
+### 1. Repo klonen
 
-- **File-Upload Feld**
-- Zwei Buttons:
-  1. **„test“**
-  2. **„upload“**
+```bash
+git clone https://github.com/yourusername/file-upload-api.git
+cd file-upload-api
+```
 
-Keine Authentifizierung, keine Benutzerverwaltung.
+### 2. Virtual Environment erstellen
 
-#### Button „test“ – Erwartetes Verhalten
-- Datei wird hochgeladen und serverseitig verarbeitet, aber **nicht gespeichert**
-- Die Anwendung liefert dem User ein **Datenqualitäts-Report**, z.B.:
-  - Ob das File **lesbar** ist
-  - Ob Spalten/Datentypen **konform** zum Schema sind
-  - Welche **Bereinigungen** nötig wären (oder durchgeführt würden)
-  - Eine klare Einstufung, z.B.:
-    -  *Konform / OK*
-    -  *Konform nach Bereinigung*
-    -  *Nicht konform (kann nicht verarbeitet werden)*
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# oder: venv\Scripts\activate  # Windows
+```
 
-Ausgabe kann simpel als JSON im Browser oder als einfache HTML-Liste erfolgen.
+### 3. Dependencies installieren
 
-#### Button „upload“ – Erwartetes Verhalten
-- Datei wird hochgeladen
-- Daten werden **eingelesen**, **bereinigt** und anschließend in Postgres **persistiert**
-- User erhält eine klare **Success-Meldung** (und optional Anzahl importierter Datensätze)
+```bash
+pip install -r requirements.txt
+```
 
----
+### 4. Datenbank starten (Docker)
 
-### 2) Backend
-Das Backend soll die Requests annehmen und sinnvoll verarbeiten. Erwartet wird eine saubere, nachvollziehbare Struktur, z.B.:
+```bash
+docker-compose up -d
+```
 
-- Routing/Controller Layer
-- Service/Business-Logik (Parsing, Validation, Cleaning)
-- Persistence Layer (DB)
+### 5. API starten
 
-#### Empfohlene API-Endpunkte (Beispiel)
-- `POST /api/test`  
-- `POST /api/upload`
+```bash
+uvicorn app.main:app --reload
+```
 
-Du kannst andere Pfade wählen – aber dokumentiere sie.
+### 6. Im Browser öffnen
+
+- GUI: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
 
 ---
 
-### 3) Dateiformate: .csv und .nas
-Die App muss beide Dateitypen akzeptieren.
+## API Endpunkte
 
-- **CSV**: klassisches tabellarisches Format
-- **NAS**: Die Endung `.nas` ist in der Praxis nicht eindeutig (kann je nach Domäne XML oder textbasiert sein).  
-  Für diese Aufgabe gilt daher:
-  - Implementiere einen **Parser-Mechanismus**, der klar getrennt ist (z.B. Strategy Pattern / `FileParser` Interface).
-  - Lege im Repo in `./examples/` **eigene Minimal-Beispieldateien** ab (`.csv` und `.nas`), die dein System verarbeiten kann.
-  - Dokumentiere in der README **welche .nas-Variante** du unterstützt und welche Annahmen du triffst.
-  - Bonus: Erkenne anhand des Inhalts, ob `.nas` eher **XML** oder **textbasiert** ist, und reagiere mit einer verständlichen Fehlermeldung, falls nicht unterstützt.
+| Endpunkt | Methode | Was macht es? |
+|----------|---------|---------------|
+| `/` | GET | Web-GUI ausliefern |
+| `/health` | GET | Prüft ob API und DB laufen |
+| `/api/test` | POST | Datei validieren (ohne speichern) |
+| `/api/upload` | POST | Datei validieren und in DB speichern |
 
-> In der Bewertung achten wir besonders auf Robustheit, Fehlermeldungen und saubere Trennung der Parser-Logik.
+### POST /api/test
 
----
+Testet eine Datei ohne sie zu speichern.
 
-## Zielschema (Datenmodell)
-Definiere ein klares Schema, nach dem du Daten validierst und speicherst.  
-Du darfst das Schema selbst festlegen, aber es muss den Daten entsprechen. 
-Als Beispiel und Referenz dienen die beigefügten example Dateien 
+```bash
+curl -X POST http://localhost:8000/api/test \
+  -F "file=@examples/geodata_example_1.csv"
+```
 
+Response:
+```json
+{
+  "status": "OK",
+  "total_rows": 3,
+  "valid_rows": 3,
+  "error_rows": 0,
+  "error_summary": {},
+  "preview": [...]
+}
+```
 
-### Mindestanforderung an das Schema
-Bitte implementieren:
+### POST /api/upload
 
-- **Pflichtfelder** (NOT NULL)
-- **Typprüfung** (z.B. Datum parsebar, Zahlen sind Zahlen)
-- **Eindeutigkeit** für einen sinnvollen Schlüssel (z.B. `external_id` oder zusammengesetzter Schlüssel)
-- Speicherung in mindestens **einer Tabelle** (mehr ist optional)
+Validiert und speichert Daten in der Datenbank. Wenn ID schon existiert wird geupdated statt neu eingefügt (Upsert).
 
-> Wichtig: Das Schema muss in der README dokumentiert sein.
+```bash
+curl -X POST http://localhost:8000/api/upload \
+  -F "file=@examples/geodata_example_1.csv"
+```
 
----
-
-## Datenbereinigung (Cleaning Rules)
-Implementiere nachvollziehbare Bereinigungen. Mindestens:
-
-1. **Whitespace entfernen** (trim) bei Strings
-2. **Leere Werte normalisieren** (z.B. `""`, `"null"`, `"N/A"` → `NULL`)
-3. **Typkonvertierung**:
-   - Zahlenfelder in numeric/int
-   - Datumsfelder in `date/datetime`
-4. **Duplikate behandeln** (z.B. nach Schlüssel):
-   - definieren, wie entschieden wird (erste Zeile gewinnt / letzte gewinnt / error)
-5. **Spaltennamen normalisieren**:
-   - z.B. case-insensitive matching (`Name`, `name`, `NAME`)
-   - oder klarer Fehler, wenn Spalten fehlen
-
-### Ergebnis der Bereinigung
-- Für „test“: nur Report (nichts speichern)
-- Für „upload“: tatsächlich bereinigt speichern
-
----
-
-## Datenqualitäts-Report (für „test“)
-Der Report soll mindestens enthalten:
-
-- Dateityp erkannt: `csv | nas | unknown`
-- Anzahl gelesener Zeilen
-- Anzahl gültiger Datensätze
-- Anzahl ungültiger Datensätze + Gründe (aggregiert)
-- Liste/Übersicht der angewendeten oder notwendigen Bereinigungen
-- Status: `OK | FIXABLE | INVALID`
-
----
-## Datenbank (Docker Postgres)
-Stelle eine lauffähige Postgres DB via Docker bereit.
-
-### Anforderungen
-- `docker-compose.yml` mit Postgres
-- App kann sich verbinden (Config via ENV Variablen)
-- Erstelle Tabellen automatisiert (Migrationen oder automatisch beim Start; dokumentieren)
-- Bei „upload“ sollen Datensätze tatsächlich in Postgres landen
+Response:
+```json
+{
+  "status": "success",
+  "filename": "geodata_example_1.csv",
+  "total_rows": 3,
+  "saved_rows": 3,
+  "error_rows": 0
+}
+```
 
 ---
 
-## Nicht-Funktionale Anforderungen
-- Saubere Fehlermeldungen (Frontend und API)
-- Sinnvolle HTTP Status Codes
-- Logging (mindestens rudimentär)
-- Klare Projektstruktur
-- Clean Code
-- Konsistenz
-- README, damit ein Reviewer alles lokal starten kann
+## Unterstützte Dateiformate
+
+### CSV
+
+```csv
+ID,Flurstücknummer,longitude,latidude,Gemeinde,Bundesland,Größe in ha
+1001,045-123-0001,8.6821,50.1109,Frankfurt am Main,Hessen,0.87
+```
+
+### NAS (XML)
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<NasExport>
+  <Flurstueck>
+    <ID>2001</ID>
+    <Flurstücknummer>123-001-0007</Flurstücknummer>
+    <longitude>9.9937</longitude>
+    <latidude>53.5511</latidude>
+    <Gemeinde>Hamburg</Gemeinde>
+    <Bundesland>Hamburg</Bundesland>
+    <Größe in ha>0.63</Größe in ha>
+  </Flurstueck>
+</NasExport>
+```
+
+NAS Parser nutzt Regex statt XML-Parser weil die Beispieldateien ungültiges XML haben (z.B. `<Größe in ha>` mit Leerzeichen im Tag-Namen).
 
 ---
 
-## README Mindestinhalt
-Bitte dokumentieren:
+## Datenbereinigung (Cleaner)
 
-1. Setup (Voraussetzungen)
-2. Start via Docker (DB) + Start der App
-3. Endpunkte / Bedienung der UI
-4. Unterstütztes Schema + Beispiel-Dateien
-5. Welche Bereinigungen durchgeführt werden
-6. Typische Fehlerfälle und deren Output
+Der Cleaner macht folgendes:
 
----
-
-## Bonus (optional)
-- Unit Tests für Parser/Cleaner/Validator
-- OpenAPI/Swagger (z.B. bei FastAPI)
-- Batch Insert / Upsert Strategie
-- Kleine Statistik-Ansicht nach Upload (z.B. Anzahl inserted/updated)
-- Unterstützung mehrerer `.nas`-Varianten (z.B. XML vs Text) oder zumindest Content-Detection
+| Was | Beispiel |
+|-----|----------|
+| Whitespace entfernen | `" Hamburg "` → `"Hamburg"` |
+| NULL-Werte erkennen | `""`, `"-"`, `"N/A"` → `NULL` |
+| Deutsche Zahlen | `"1,25"` → `1.25` (nur bei Semikolon-CSV oder quoted values) |
+| Typkonvertierung | `"1001"` → `1001` (int) |
+| Spaltennamen normalisieren | `"Größe in ha"` → `groesse_ha` |
 
 ---
 
-## Abgabe
-- Code in ein **public repo** (GitHub/GitLab)
-- Link an uns senden
-- Repo muss ohne manuelle „Spezialschritte“ lokal startbar sein (README)
+## Validierung
 
-Es geht nicht um Perfektion. Es geht darum, eure code skills einordnen zu können, eure Arbeitsweise und Herangehensweise herauszufinden.
+| Feld | Regel |
+|------|-------|
+| `id` | Pflichtfeld, muss Integer sein |
+| `latitude` | Muss zwischen -90 und 90 liegen |
+| `longitude` | Muss zwischen -180 und 180 liegen |
+| `groesse_ha` | Darf nicht negativ sein |
 
-Viel Erfolg!
+### Status Codes
 
+| Status | Bedeutung |
+|--------|-----------|
+| `OK` | Alle Zeilen gültig |
+| `FIXABLE` | Einige Zeilen gültig, einige fehlerhaft |
+| `INVALID` | Keine gültigen Zeilen |
 
+---
 
+## Projektstruktur
+
+```
+file-upload-api/
+├── app/
+│   ├── main.py              # FastAPI App + Routing
+│   ├── database.py          # DB-Verbindung (SQLAlchemy)
+│   ├── GUI/
+│   │   └── GUI.html         # Web-Frontend
+│   ├── models/
+│   │   └── geodata.py       # DB-Tabellen Definition
+│   ├── schemas/
+│   │   └── geodata.py       # Pydantic Schemas für Validierung
+│   ├── parsers/
+│   │   ├── base.py          # Parser Interface (Vaterklasse)
+│   │   ├── csv_parser.py    # CSV Parser
+│   │   └── nas_parser.py    # NAS/XML Parser (mit Regex)
+│   ├── logic/
+│   │   └── cleaner.py       # Datenbereinigung + Validierung
+│   └── routers/
+│       └── upload.py        # API Endpunkte (/api/test, /api/upload)
+├── examples/                 # Beispieldateien zum Testen
+├── docker-compose.yml        # PostgreSQL Container
+├── requirements.txt          # Python Dependencies
+└── README.md
+```
+
+---
+
+## Datenbank
+
+### Verbindung prüfen
+
+```bash
+docker exec -it geodata-postgres psql -U geodata_user -d geodata_db -c "SELECT * FROM geodata"
+```
+
+### Alle Daten löschen
+
+```bash
+docker exec -it geodata-postgres psql -U geodata_user -d geodata_db -c "DELETE FROM geodata"
+```
+
+### DB neu starten
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+---
+
+## Wie funktioniert der Flow?
+
+```
+Datei hochladen (CSV/NAS)
+        │
+        ▼
+    Parser
+    (csv_parser.py oder nas_parser.py)
+        │
+        ▼
+    raw_data: Liste von Dicts
+    [{"ID": "1001", "Gemeinde": "Hamburg", ...}, ...]
+        │
+        ▼
+    Cleaner
+    (cleaner.py)
+        │
+        ├── _clean_row(): Whitespace, Typen, NULL-Werte
+        └── _validate_row(): Wertebereiche prüfen
+        │
+        ▼
+    cleaned_data + errors
+        │
+        ├── /api/test → Report zurückgeben
+        └── /api/upload → In DB speichern (Upsert)
+```
+
+---
+
+## Technologien
+
+- **FastAPI** - Web-Framework
+- **SQLAlchemy** - ORM für Datenbank
+- **PostgreSQL** - Datenbank
+- **Pydantic** - Datenvalidierung
+- **Docker** - Container für DB
+
+---
+
+## Bekannte Einschränkungen
+
+- `geodata_example_2.csv` wirft Parsing-Fehler weil deutsche Zahlen (Komma statt Punkt) bei Komma-getrennten CSVs nicht funktionieren. Das ist erwartetes Verhalten - der Parser kann nicht wissen ob `13,4050` eine Zahl oder zwei Spalten sind.
+- NAS Parser nutzt Regex statt echten XML-Parser wegen ungültiger Tag-Namen in den Beispieldateien.
