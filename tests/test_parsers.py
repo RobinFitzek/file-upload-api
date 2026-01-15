@@ -1,4 +1,3 @@
-
 import pytest
 from app.parsers import get_parser, CSVParser, NASParser
 
@@ -23,10 +22,13 @@ class TestGetParser:
     
     def test_unknown_format_raises_error(self):
         """Unbekanntes Format wirft ValueError"""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc_info:
             get_parser("test.txt")
-        with pytest.raises(ValueError):
+        assert "Nicht unterstütztes Dateiformat" in str(exc_info.value)
+        
+        with pytest.raises(ValueError) as exc_info:
             get_parser("test.xml")
+        assert "Nicht unterstütztes Dateiformat" in str(exc_info.value)
 
 
 class TestCSVParser:
@@ -117,6 +119,7 @@ class TestNASParser:
         # Nutze .encode() statt b"..." für Umlaute
         nas_content = """<NasExport>
             <Flurstueck>
+                <ID>1001</ID>
                 <Groesse>0.87</Groesse>
             </Flurstueck>
         </NasExport>""".encode("utf-8")
@@ -142,3 +145,25 @@ class TestNASParser:
         """Gibt .nas als Extension zurück"""
         parser = NASParser()
         assert parser.get_supported_extension() == ".nas"
+    
+    def test_text_nas_rejected_with_clear_error(self):
+        """Text-basiertes NAS wird mit klarer Fehlermeldung abgelehnt"""
+        text_nas = b"BEGINN\nDaten\nENDE"
+        parser = NASParser()
+        
+        with pytest.raises(ValueError) as exc_info:
+            parser.parse(text_nas)
+        
+        error_msg = str(exc_info.value)
+        assert "Nicht unterstütztes NAS-Format" in error_msg
+        assert "XML-basierte" in error_msg
+    
+    def test_empty_nas_rejected(self):
+        """NAS ohne Flurstueck-Elemente wird abgelehnt"""
+        empty_nas = b"<?xml version='1.0'?><NasExport></NasExport>"
+        parser = NASParser()
+        
+        with pytest.raises(ValueError) as exc_info:
+            parser.parse(empty_nas)
+        
+        assert "Keine <Flurstueck>-Elemente" in str(exc_info.value)
