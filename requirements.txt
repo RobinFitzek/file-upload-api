@@ -1,11 +1,11 @@
-fastapi==0.115.0    # Web-Framework / API-Endpunkte
+fastapi==0.128.0    # Web-Framework / API-Endpunkte
 uvicorn[standard]==0.27.0  # Webserver / App-Start
-sqlalchemy==2.0.25  # Datenbank-Manager / Python-zu-SQL
+sqlalchemy==2.0.45  # Datenbank-Manager / Python-zu-SQL
 psycopg[binary]==3.1.17  # Postgres-Treiber (Version 3, hatte Probleme mit V2)
-pydantic==2.5.3     # Daten-Checker / Validierung
-python-multipart==0.0.6 # für File-Uploads
-python-dotenv==1.0.0 # liest die .env und macht die Konfigurationswerte verfügbar
+pydantic==2.12.5     # Daten-Checker / Validierung
+python-multipart==0.0.20 # für File-Uploads
+python-dotenv==1.1.0 # liest die .env und macht die Konfigurationswerte verfügbar
 
 # Fürs Testing
-pytest==8.0.0
-httpx==0.27.0
+pytest==8.4.1
+httpx==0.28.1

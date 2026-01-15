@@ -1,4 +1,3 @@
-
 import pytest
 from app.logic.cleaner import DataCleaner
 
@@ -80,7 +79,7 @@ class TestDataCleanerNullValues:
                 "Flurstücknummer": null_value,
                 "longitude": "8.6821",
                 "latidude": "50.1109",
-                "Gemeinde": "Test",
+                "Gemeinde": "Frankfurt",
                 "Bundesland": "Hessen",
                 "Größe in ha": "0.87"
             }]
@@ -99,16 +98,17 @@ class TestDataCleanerTypeConversion:
         """String wird zu Integer"""
         raw_data = [{
             "ID": "1001",
-            "Flurstücknummer": "test",
+            "Flurstücknummer": "045-123",
             "longitude": "8.0",
             "latidude": "50.0",
-            "Gemeinde": "Test",
-            "Bundesland": "Test",
+            "Gemeinde": "Frankfurt",
+            "Bundesland": "Hessen",
             "Größe in ha": "1.0"
         }]
         
         cleaned, errors = self.cleaner.clean(raw_data)
         
+        assert len(errors) == 0
         assert isinstance(cleaned[0]["id"], int)
         assert cleaned[0]["id"] == 1001
     
@@ -116,16 +116,17 @@ class TestDataCleanerTypeConversion:
         """String wird zu Float"""
         raw_data = [{
             "ID": "1001",
-            "Flurstücknummer": "test",
+            "Flurstücknummer": "045-123",
             "longitude": "8.6821",
             "latidude": "50.1109",
-            "Gemeinde": "Test",
-            "Bundesland": "Test",
+            "Gemeinde": "Frankfurt",
+            "Bundesland": "Hessen",
             "Größe in ha": "0.87"
         }]
         
         cleaned, errors = self.cleaner.clean(raw_data)
         
+        assert len(errors) == 0
         assert isinstance(cleaned[0]["longitude"], float)
         assert cleaned[0]["longitude"] == 8.6821
     
@@ -133,16 +134,17 @@ class TestDataCleanerTypeConversion:
         """Deutsches Komma wird zu Punkt"""
         raw_data = [{
             "ID": "1001",
-            "Flurstücknummer": "test",
+            "Flurstücknummer": "045-123",
             "longitude": "8,6821",
             "latidude": "50,1109",
-            "Gemeinde": "Test",
-            "Bundesland": "Test",
+            "Gemeinde": "Frankfurt",
+            "Bundesland": "Hessen",
             "Größe in ha": "0,87"
         }]
         
         cleaned, errors = self.cleaner.clean(raw_data)
         
+        assert len(errors) == 0
         assert cleaned[0]["longitude"] == 8.6821
         assert cleaned[0]["groesse_ha"] == 0.87
     
@@ -150,11 +152,11 @@ class TestDataCleanerTypeConversion:
         """Ungültige Zahl wird als Fehler erkannt"""
         raw_data = [{
             "ID": "not_a_number",
-            "Flurstücknummer": "test",
+            "Flurstücknummer": "045-123",
             "longitude": "8.0",
             "latidude": "50.0",
-            "Gemeinde": "Test",
-            "Bundesland": "Test",
+            "Gemeinde": "Frankfurt",
+            "Bundesland": "Hessen",
             "Größe in ha": "1.0"
         }]
         
@@ -176,11 +178,11 @@ class TestDataCleanerValidation:
         for lat in ["-90", "0", "45.5", "90"]:
             raw_data = [{
                 "ID": "1001",
-                "Flurstücknummer": "test",
+                "Flurstücknummer": "045-123",
                 "longitude": "8.0",
                 "latidude": lat,
-                "Gemeinde": "Test",
-                "Bundesland": "Test",
+                "Gemeinde": "Frankfurt",
+                "Bundesland": "Hessen",
                 "Größe in ha": "1.0"
             }]
             
@@ -192,11 +194,11 @@ class TestDataCleanerValidation:
         for lat in ["-91", "95", "180"]:
             raw_data = [{
                 "ID": "1001",
-                "Flurstücknummer": "test",
+                "Flurstücknummer": "045-123",
                 "longitude": "8.0",
                 "latidude": lat,
-                "Gemeinde": "Test",
-                "Bundesland": "Test",
+                "Gemeinde": "Frankfurt",
+                "Bundesland": "Hessen",
                 "Größe in ha": "1.0"
             }]
             
@@ -208,11 +210,11 @@ class TestDataCleanerValidation:
         for lon in ["-180", "0", "90", "180"]:
             raw_data = [{
                 "ID": "1001",
-                "Flurstücknummer": "test",
+                "Flurstücknummer": "045-123",
                 "longitude": lon,
                 "latidude": "50.0",
-                "Gemeinde": "Test",
-                "Bundesland": "Test",
+                "Gemeinde": "Frankfurt",
+                "Bundesland": "Hessen",
                 "Größe in ha": "1.0"
             }]
             
@@ -224,11 +226,11 @@ class TestDataCleanerValidation:
         for lon in ["-181", "200", "360"]:
             raw_data = [{
                 "ID": "1001",
-                "Flurstücknummer": "test",
+                "Flurstücknummer": "045-123",
                 "longitude": lon,
                 "latidude": "50.0",
-                "Gemeinde": "Test",
-                "Bundesland": "Test",
+                "Gemeinde": "Frankfurt",
+                "Bundesland": "Hessen",
                 "Größe in ha": "1.0"
             }]
             
@@ -239,11 +241,11 @@ class TestDataCleanerValidation:
         """Negative Größe wird abgelehnt"""
         raw_data = [{
             "ID": "1001",
-            "Flurstücknummer": "test",
+            "Flurstücknummer": "045-123",
             "longitude": "8.0",
             "latidude": "50.0",
-            "Gemeinde": "Test",
-            "Bundesland": "Test",
+            "Gemeinde": "Frankfurt",
+            "Bundesland": "Hessen",
             "Größe in ha": "-0.5"
         }]
         
@@ -256,11 +258,11 @@ class TestDataCleanerValidation:
         """Fehlende ID wird abgelehnt"""
         raw_data = [{
             "ID": "",
-            "Flurstücknummer": "test",
+            "Flurstücknummer": "045-123",
             "longitude": "8.0",
             "latidude": "50.0",
-            "Gemeinde": "Test",
-            "Bundesland": "Test",
+            "Gemeinde": "Frankfurt",
+            "Bundesland": "Hessen",
             "Größe in ha": "1.0"
         }]
         
@@ -278,7 +280,7 @@ class TestDataCleanerReport:
     
     def test_report_status_ok(self):
         """Status OK wenn keine Fehler"""
-        raw_data = [{"ID": "1", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"}]
+        raw_data = [{"ID": "1", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "Frankfurt", "Bundesland": "Hessen", "Größe in ha": "1"}]
         cleaned, errors = self.cleaner.clean(raw_data)
         report = self.cleaner.generate_report(raw_data, cleaned, errors)
         
@@ -287,8 +289,8 @@ class TestDataCleanerReport:
     def test_report_status_fixable(self):
         """Status FIXABLE wenn einige Fehler"""
         raw_data = [
-            {"ID": "1", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"},
-            {"ID": "invalid", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"}
+            {"ID": "1", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "Frankfurt", "Bundesland": "Hessen", "Größe in ha": "1"},
+            {"ID": "invalid", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "Frankfurt", "Bundesland": "Hessen", "Größe in ha": "1"}
         ]
         cleaned, errors = self.cleaner.clean(raw_data)
         report = self.cleaner.generate_report(raw_data, cleaned, errors)
@@ -298,7 +300,7 @@ class TestDataCleanerReport:
     def test_report_status_invalid(self):
         """Status INVALID wenn alle fehlerhaft"""
         raw_data = [
-            {"ID": "invalid", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"}
+            {"ID": "invalid", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "Frankfurt", "Bundesland": "Hessen", "Größe in ha": "1"}
         ]
         cleaned, errors = self.cleaner.clean(raw_data)
         report = self.cleaner.generate_report(raw_data, cleaned, errors)
@@ -308,9 +310,9 @@ class TestDataCleanerReport:
     def test_report_contains_counts(self):
         """Report enthält Zählungen"""
         raw_data = [
-            {"ID": "1", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"},
-            {"ID": "2", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"},
-            {"ID": "invalid", "Flurstücknummer": "t", "longitude": "8", "latidude": "50", "Gemeinde": "T", "Bundesland": "T", "Größe in ha": "1"}
+            {"ID": "1", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "Frankfurt", "Bundesland": "Hessen", "Größe in ha": "1"},
+            {"ID": "2", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "München", "Bundesland": "Bayern", "Größe in ha": "1"},
+            {"ID": "invalid", "Flurstücknummer": "123", "longitude": "8", "latidude": "50", "Gemeinde": "Berlin", "Bundesland": "Berlin", "Größe in ha": "1"}
         ]
         cleaned, errors = self.cleaner.clean(raw_data)
         report = self.cleaner.generate_report(raw_data, cleaned, errors)
@@ -318,3 +320,51 @@ class TestDataCleanerReport:
         assert report["total_rows"] == 3
         assert report["valid_rows"] == 2
         assert report["error_rows"] == 1
+
+
+class TestDataCleanerDateConversion:
+    """Tests für Datumsfeld-Konvertierung"""
+    
+    def setup_method(self):
+        self.cleaner = DataCleaner()
+    
+    def test_parse_iso_date(self):
+        """ISO-Format wird erkannt: 2024-01-15"""
+        result = self.cleaner._parse_date("2024-01-15")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 1
+        assert result.day == 15
+    
+    def test_parse_german_date(self):
+        """Deutsches Format wird erkannt: 15.01.2024"""
+        result = self.cleaner._parse_date("15.01.2024")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 1
+        assert result.day == 15
+    
+    def test_parse_datetime_with_time(self):
+        """Datum mit Uhrzeit wird erkannt"""
+        result = self.cleaner._parse_date("2024-01-15 10:30:00")
+        assert result is not None
+        assert result.hour == 10
+        assert result.minute == 30
+    
+    def test_parse_german_datetime(self):
+        """Deutsches Datum mit Uhrzeit wird erkannt"""
+        result = self.cleaner._parse_date("15.01.2024 14:30:00")
+        assert result is not None
+        assert result.year == 2024
+        assert result.hour == 14
+    
+    def test_parse_invalid_date_returns_none(self):
+        """Ungültiges Datum gibt None zurück"""
+        result = self.cleaner._parse_date("not-a-date")
+        assert result is None
+    
+    def test_parse_null_values_return_none(self):
+        """NULL-Werte werden als None behandelt"""
+        for null_val in ["", "null", "N/A", "-"]:
+            result = self.cleaner._parse_date(null_val)
+            assert result is None

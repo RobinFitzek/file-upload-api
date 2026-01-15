@@ -6,14 +6,14 @@ POST /api/upload → Datei prüfen und in DB speichern
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
-import logging
 
+from app.logging_config import get_logger
 from app.database import get_db
 from app.parsers import get_parser
 from app.logic.cleaner import DataCleaner
 from app.models.geodata import Geodata
 
-logger = logging.getLogger(__name__)
+logger = get_logger("upload")
 
 # Router erstellen (wird in main.py eingebunden)
 router = APIRouter(prefix="/api", tags=["upload"])
@@ -31,6 +31,8 @@ async def test_file(file: UploadFile = File(...)):
     """
     Testet eine Datei ohne sie zu speichern.
     """
+    logger.info(f"Test-Request erhalten: {file.filename}")
+    
     # 0. Prüfen ob Dateiname existiert
     if not file.filename:
         raise HTTPException(status_code=400, detail="Kein Dateiname angegeben")
@@ -60,6 +62,7 @@ async def test_file(file: UploadFile = File(...)):
     report["status"] = "valid" if not errors else "has_errors"
     report["file_type"] = file_type 
     
+    logger.info(f"Test abgeschlossen: {file.filename} - {len(cleaned_data)}/{len(raw_data)} gültig")
     return report
 
 
@@ -68,6 +71,8 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     """
     Lädt eine Datei hoch und speichert sie in der Datenbank.
     """
+    logger.info(f"Upload-Request erhalten: {file.filename}")
+    
     # 0. Prüfen ob Dateiname existiert
     if not file.filename:
         raise HTTPException(status_code=400, detail="Kein Dateiname angegeben")
@@ -118,6 +123,7 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     
     # Änderungen speichern
     db.commit()
+
     
     return {
         "status": "success",
@@ -130,3 +136,63 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
         "error_rows": len(errors),
         "errors": errors[:10]
     }
+
+
+@router.get("/data")
+async def get_all_data(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
+    """
+    Alle Geodaten abrufen (mit Pagination).
+    """
+    data = db.query(Geodata).offset(skip).limit(limit).all()
+    total = db.query(Geodata).count()
+    
+    # Konvertiere SQLAlchemy-Objekte zu Dicts (ohne _sa_instance_state)
+    result = []
+    for row in data:
+        row_dict = {c.name: getattr(row, c.name) for c in row.__table__.columns}
+        result.append(row_dict)
+    
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "data": result
+    }
+
+
+@router.delete("/data")
+async def delete_all_data(db: Session = Depends(get_db)):
+    """
+    ALLE Geodaten löschen (Vorsicht!).
+    """
+    count = db.query(Geodata).count()
+    db.query(Geodata).delete()
+    db.commit()
+    
+    return {"status": "deleted", "deleted_count": count}
+
+
+@router.get("/data/{id}")
+async def get_data_by_id(id: int, db: Session = Depends(get_db)):
+    """
+    Einzelnen Datensatz nach ID abrufen.
+    """
+    data = db.query(Geodata).filter(Geodata.id == id).first()
+    if not data:
+        raise HTTPException(status_code=404, detail=f"Datensatz mit ID {id} nicht gefunden")
+    return data
+
+
+@router.delete("/data/{id}")
+async def delete_data_by_id(id: int, db: Session = Depends(get_db)):
+    """
+    Einzelnen Datensatz löschen.
+    """
+    data = db.query(Geodata).filter(Geodata.id == id).first()
+    if not data:
+        raise HTTPException(status_code=404, detail=f"Datensatz mit ID {id} nicht gefunden")
+    
+    db.delete(data)
+    db.commit()
+    
+    return {"status": "deleted", "id": id}
