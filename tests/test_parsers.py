@@ -146,8 +146,8 @@ class TestNASParser:
         parser = NASParser()
         assert parser.get_supported_extension() == ".nas"
     
-    def test_text_nas_rejected_with_clear_error(self):
-        """Text-basiertes NAS wird mit klarer Fehlermeldung abgelehnt"""
+    def test_text_nas_without_einheit_rejected(self):
+        """Text-NAS ohne EINHEIT-Blöcke wird abgelehnt"""
         text_nas = b"BEGINN\nDaten\nENDE"
         parser = NASParser()
         
@@ -155,8 +155,7 @@ class TestNASParser:
             parser.parse(text_nas)
         
         error_msg = str(exc_info.value)
-        assert "Nicht unterstütztes NAS-Format" in error_msg
-        assert "XML-basierte" in error_msg
+        assert "Keine EINHEIT-Blöcke" in error_msg
     
     def test_empty_nas_rejected(self):
         """NAS ohne Flurstueck-Elemente wird abgelehnt"""
