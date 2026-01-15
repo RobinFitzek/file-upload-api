@@ -6,14 +6,14 @@ POST /api/upload → Datei prüfen und in DB speichern
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
-import logging
 
+from app.logging_config import get_logger
 from app.database import get_db
 from app.parsers import get_parser
 from app.logic.cleaner import DataCleaner
 from app.models.geodata import Geodata
 
-logger = logging.getLogger(__name__)
+logger = get_logger("upload")
 
 # Router erstellen (wird in main.py eingebunden)
 router = APIRouter(prefix="/api", tags=["upload"])
@@ -31,6 +31,8 @@ async def test_file(file: UploadFile = File(...)):
     """
     Testet eine Datei ohne sie zu speichern.
     """
+    logger.info(f"Test-Request erhalten: {file.filename}")
+    
     # 0. Prüfen ob Dateiname existiert
     if not file.filename:
         raise HTTPException(status_code=400, detail="Kein Dateiname angegeben")
@@ -60,6 +62,7 @@ async def test_file(file: UploadFile = File(...)):
     report["status"] = "valid" if not errors else "has_errors"
     report["file_type"] = file_type 
     
+    logger.info(f"Test abgeschlossen: {file.filename} - {len(cleaned_data)}/{len(raw_data)} gültig")
     return report
 
 
@@ -68,6 +71,8 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     """
     Lädt eine Datei hoch und speichert sie in der Datenbank.
     """
+    logger.info(f"Upload-Request erhalten: {file.filename}")
+    
     # 0. Prüfen ob Dateiname existiert
     if not file.filename:
         raise HTTPException(status_code=400, detail="Kein Dateiname angegeben")

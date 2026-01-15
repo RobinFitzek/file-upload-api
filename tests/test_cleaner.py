@@ -320,3 +320,51 @@ class TestDataCleanerReport:
         assert report["total_rows"] == 3
         assert report["valid_rows"] == 2
         assert report["error_rows"] == 1
+
+
+class TestDataCleanerDateConversion:
+    """Tests für Datumsfeld-Konvertierung"""
+    
+    def setup_method(self):
+        self.cleaner = DataCleaner()
+    
+    def test_parse_iso_date(self):
+        """ISO-Format wird erkannt: 2024-01-15"""
+        result = self.cleaner._parse_date("2024-01-15")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 1
+        assert result.day == 15
+    
+    def test_parse_german_date(self):
+        """Deutsches Format wird erkannt: 15.01.2024"""
+        result = self.cleaner._parse_date("15.01.2024")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 1
+        assert result.day == 15
+    
+    def test_parse_datetime_with_time(self):
+        """Datum mit Uhrzeit wird erkannt"""
+        result = self.cleaner._parse_date("2024-01-15 10:30:00")
+        assert result is not None
+        assert result.hour == 10
+        assert result.minute == 30
+    
+    def test_parse_german_datetime(self):
+        """Deutsches Datum mit Uhrzeit wird erkannt"""
+        result = self.cleaner._parse_date("15.01.2024 14:30:00")
+        assert result is not None
+        assert result.year == 2024
+        assert result.hour == 14
+    
+    def test_parse_invalid_date_returns_none(self):
+        """Ungültiges Datum gibt None zurück"""
+        result = self.cleaner._parse_date("not-a-date")
+        assert result is None
+    
+    def test_parse_null_values_return_none(self):
+        """NULL-Werte werden als None behandelt"""
+        for null_val in ["", "null", "N/A", "-"]:
+            result = self.cleaner._parse_date(null_val)
+            assert result is None

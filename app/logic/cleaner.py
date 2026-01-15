@@ -1,4 +1,5 @@
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
+from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,18 @@ class DataCleaner:
         "Größe in ha": ("groesse_ha", float),
     }
 
+    # Datumsformate die erkannt werden (häufigste zuerst)
+    DATE_FORMATS = [
+        "%Y-%m-%d",           # ISO: 2024-01-15
+        "%d.%m.%Y",           # DE: 15.01.2024
+        "%d/%m/%Y",           # EU: 15/01/2024
+        "%Y/%m/%d",           # 2024/01/15
+        "%d-%m-%Y",           # 15-01-2024
+        "%Y-%m-%d %H:%M:%S",  # ISO mit Zeit
+        "%d.%m.%Y %H:%M:%S",  # DE mit Zeit
+        "%d.%m.%Y %H:%M",     # DE mit Zeit ohne Sekunden
+    ]
+
     # Werte die als NULL behandelt werden
     NULL_VALUES = {"", "null", "NULL", "None", "N/A", "n/a", "-"}
     
@@ -48,6 +61,7 @@ class DataCleaner:
             "null_converted": 0,
             "comma_to_point": 0,
             "type_converted": 0,
+            "date_converted": 0,
         }
         # Detaillierte Bereinigungen pro Zeile
         self.cleaning_details = []
@@ -69,6 +83,7 @@ class DataCleaner:
             "null_converted": 0,
             "comma_to_point": 0,
             "type_converted": 0,
+            "date_converted": 0,
         }
         self.cleaning_details = []
         
@@ -150,6 +165,16 @@ class DataCleaner:
                     cleaned[target_field] = float(value)
                     if isinstance(original_value, str):
                         self.cleanings_performed["type_converted"] += 1
+                        
+                elif expected_type == datetime:
+                    # Datum parsen
+                    parsed_date = self._parse_date(value)
+                    if parsed_date is None:
+                        raise ValueError(f"Feld '{source_field}': '{value}' ist kein gültiges Datum")
+                    cleaned[target_field] = parsed_date
+                    row_cleanings.append(f"'{source_field}': '{value}' → Datum {parsed_date}")
+                    self.cleanings_performed["date_converted"] += 1
+                    
                 else:
                     cleaned[target_field] = str(value)
                     
@@ -157,6 +182,27 @@ class DataCleaner:
                 raise ValueError(f"Feld '{source_field}': '{value}' ist kein gültiger {expected_type.__name__}")
         
         return cleaned, row_cleanings
+    
+    def _parse_date(self, value: str) -> Optional[datetime]:
+        """
+        Versucht einen String in ein Datum zu konvertieren.
+        Probiert verschiedene Formate durch.
+        
+        Returns:
+            datetime-Objekt oder None wenn nicht parsebar
+        """
+        if not value or value in self.NULL_VALUES:
+            return None
+        
+        value = str(value).strip()
+        
+        for fmt in self.DATE_FORMATS:
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        
+        return None
     
     def _validate_row(self, row: Dict[str, Any]) -> None:
         """Validiert Wertebereiche und Pflichtfelder."""
@@ -237,6 +283,8 @@ class DataCleaner:
             cleanings_applied.append(f"Komma zu Punkt konvertiert ({self.cleanings_performed['comma_to_point']}x)")
         if self.cleanings_performed["type_converted"] > 0:
             cleanings_applied.append(f"Typkonvertierung String → Zahl ({self.cleanings_performed['type_converted']}x)")
+        if self.cleanings_performed["date_converted"] > 0:
+            cleanings_applied.append(f"Datumskonvertierung String → datetime ({self.cleanings_performed['date_converted']}x)")
         
         # Immer anzeigen (auch wenn 0x)
         cleanings_applied.append("Spaltennamen normalisiert (deutsch → snake_case)")
@@ -260,6 +308,7 @@ class DataCleaner:
                 "null_converted": self.cleanings_performed["null_converted"],
                 "comma_to_point": self.cleanings_performed["comma_to_point"],
                 "type_converted": self.cleanings_performed["type_converted"],
+                "date_converted": self.cleanings_performed["date_converted"],
             },
             "cleanings_applied": cleanings_applied,
             "cleaning_details": self.cleaning_details[:10],  # Erste 10 Zeilen mit Details

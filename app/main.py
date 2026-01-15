@@ -1,25 +1,39 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-import logging
+from contextlib import asynccontextmanager
 import os
 
+from app.logging_config import setup_logging, get_logger
 from app.database import engine, Base
 from app.models.geodata import Geodata 
 from app.routers import upload
 
-# Logging fürs Terminal für Meldungen
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Logging initialisieren
+setup_logging()
+logger = get_logger("main")
 
-# Tabellen erstellen beim Start (falls nicht vorhanden)
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle-Management für Start und Shutdown"""
+    # Startup
+    Base.metadata.create_all(bind=engine)
+    logger.info("=== Geodata File Upload API gestartet ===")
+    logger.info("Dokumentation verfügbar unter /docs")
+    
+    yield
+    
+    # Shutdown
+    logger.info("=== Geodata File Upload API beendet ===")
+
 
 # FastAPI App initialisieren 
 app = FastAPI(
     title="Geodata File Upload API",
     description="API zum Hochladen und Verarbeiten von CSV/NAS Geodaten",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS erlauben damit der Browser auf API Endpunkte zugreifen kann, wäre sonst geblockt (Monolith)
@@ -32,6 +46,7 @@ app.add_middleware(
 
 # Router einbinden - fügt /api/test und /api/upload hinzu
 app.include_router(upload.router)
+
 
 # Kommunikation mit Frontend (GUI) (Root Pfad"/")
 @app.get("/", response_class=HTMLResponse)
