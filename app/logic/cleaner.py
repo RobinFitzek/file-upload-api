@@ -34,6 +34,7 @@ class DataCleaner:
         "Flurstücknummer": ("flurstuecknummer", str),
         "longitude": ("longitude", float),
         "latidude": ("latitude", float),  # Tippfehler in Quelldaten
+        "latitude": ("latitude", float),   # korrekte Schreibweise als Alias
         "Gemeinde": ("gemeinde", str),
         "Bundesland": ("bundesland", str),
         "Größe in ha": ("groesse_ha", float),
